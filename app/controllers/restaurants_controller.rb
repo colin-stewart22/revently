@@ -2,7 +2,12 @@ class RestaurantsController < ApplicationController
   before_action :set_restaurant, only: [:show, :edit, :update, :destroy]
 
   def index
-    @restaurants = Restaurant.all
+    if params[:query].present?
+      sql_query = "name ILIKE :query OR cuisine ILIKE :query"
+      @restaurants = Restaurant.where(sql_query, query: "%#{params[:query]}%")
+    else
+      @restaurants = Restaurant.all
+    end
     @markers = @restaurants.geocoded.map do |restaurant|
       {
         lat: restaurant.latitude,
@@ -42,7 +47,7 @@ class RestaurantsController < ApplicationController
     @restaurant = Restaurant.new(restaurant_params)
     @restaurant.user = current_user
     if @restaurant.save
-      redirect_to restaurants_path
+      redirect_to new_restaurant_menu_path(@restaurant.id)
     else
       render :new, status: :unprocessable_entity
     end
